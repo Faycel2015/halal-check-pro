@@ -4,13 +4,13 @@
   "description": "Professional Halal Product Scanner",
   "private": false,
   "type": "module",
-  "homepage": "https://faycel2015.github.io/halal-check-pro",
+  "homepage": "https://Faycel2015.github.io/halal-check-pro",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist",
+    "deploy": "gh-pages -d build"
     "start": "vite"
   },
   "dependencies": {
