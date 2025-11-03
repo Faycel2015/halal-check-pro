@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#10b981">
+    <title>HalalCheck Pro - فاحص الحلال الاحترافي</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class'
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Cairo', sans-serif; transition: all 0.3s; }
+        body.en { font-family: 'Inter', sans-serif; }
+        .animate-fade-in { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .gradient-primary { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+        .glass { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2); }
+        .dark .glass { background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.1); }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-300">
+    
+    <div class="max-w-md mx-auto min-h-screen bg-white dark:bg-gray-900 shadow-2xl transition-colors duration-300">
+        
+        <!-- Header -->
+        <header class="gradient-primary text-white p-6 relative overflow-hidden">
+            <div class="relative z-10">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex gap-2">
+                        <button id="theme-toggle" class="glass px-3 py-2 rounded-full hover:bg-white/20 transition">
+                            <span id="theme-icon">🌙</span>
+                        </button>
+                        <button id="settings-toggle" class="glass px-3 py-2 rounded-full hover:bg-white/20 transition">⚙️</button>
+                    </div>
+                    <button id="lang-toggle" class="glass px-4 py-2 rounded-full font-bold hover:bg-white/20 transition">EN</button>
+                </div>
+                <h1 id="app-title" class="text-3xl font-black mb-2 text-center">فاحص الحلال Pro</h1>
+                <p id="app-subtitle" class="text-center opacity-90 text-sm">تحقق من المنتجات الغذائية بسهولة</p>
+            </div>
+        </header>
+        
+        <!-- Navigation Tabs -->
+        <nav class="flex border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+            <button id="tab-scan" class="flex-1 py-3 px-4 font-bold text-emerald-600 border-b-2 border-emerald-600 transition">
+                <span>🔍</span> <span id="tab-scan-text">فحص</span>
+            </button>
+            <button id="tab-favorites" class="flex-1 py-3 px-4 font-bold text-gray-500 dark:text-gray-400 transition">
+                <span>⭐</span> <span id="tab-favorites-text">المفضلة</span>
+            </button>
+            <button id="tab-history" class="flex-1 py-3 px-4 font-bold text-gray-500 dark:text-gray-400 transition">
+                <span>📜</span> <span id="tab-history-text">السجل</span>
+            </button>
+            <button id="tab-stats" class="flex-1 py-3 px-4 font-bold text-gray-500 dark:text-gray-400 transition">
+                <span>📊</span> <span id="tab-stats-text">إحصائيات</span>
+            </button>
+        </nav>
+        
+        <!-- Main Content -->
+        <main class="p-6">
+            
+            <!-- Scan Tab -->
+            <div id="content-scan" class="space-y-4">
+                <button id="scan-btn" class="w-full gradient-primary text-white py-4 px-6 rounded-2xl font-bold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 flex items-center justify-center gap-3">
+                    <span class="text-2xl">📷</span>
+                    <span id="scan-text">امسح الباركود</span>
+                </button>
+                
+                <div class="bg-gray-50 dark:bg-gray-800 p-6 rounded-2xl space-y-4">
+                    <h3 id="manual-title" class="font-bold text-gray-900 dark:text-white">أو أدخل الباركود يدوياً</h3>
+                    <input type="text" id="barcode-input" placeholder="مثال: 3017620422003" 
+                           class="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-white rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20 outline-none transition">
+                    <button id="check-btn" class="w-full bg-gradient-to-r from-cyan-500 to-blue-500 text-white py-3 rounded-xl font-bold hover:shadow-lg transition">
+                        <span id="check-btn-text">فحص المنتج</span>
+                    </button>
+                </div>
+                
+                <!-- Comparison Mode -->
+                <div id="comparison-banner" class="hidden bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 p-4 rounded-xl border-2 border-purple-500">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="font-bold text-gray-900 dark:text-white" id="comparison-mode-text">وضع المقارنة نشط</p>
+                            <p class="text-sm text-gray-600 dark:text-gray-400" id="comparison-products-count"></p>
+                        </div>
+                        <button id="compare-now-btn" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-bold transition">
+                            <span id="compare-now-text">مقارنة الآن</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Loading -->
+                <div id="loading" class="hidden text-center space-y-4 py-12">
+                    <div class="inline-block w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+                    <p id="loading-text" class="text-gray-600 dark:text-gray-300 font-medium">جاري فحص المنتج...</p>
+                </div>
+                
+                <!-- Results -->
+                <div id="results" class="hidden space-y-6 animate-fade-in"></div>
+            </div>
+            
+            <!-- Favorites Tab -->
+            <div id="content-favorites" class="hidden">
+                <div id="favorites-list" class="space-y-4"></div>
+                <div id="favorites-empty" class="text-center py-12">
+                    <p class="text-6xl mb-4">⭐</p>
+                    <p class="text-gray-500 dark:text-gray-400 font-medium" id="no-favorites-text">لا توجد منتجات مفضلة بعد</p>
+                </div>
+            </div>
+            
+            <!-- History Tab -->
+            <div id="content-history" class="hidden">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-bold text-xl text-gray-900 dark:text-white" id="history-title">سجل البحث</h3>
+                    <button id="clear-history-btn" class="text-red-500 hover:text-red-600 font-bold text-sm">
+                        <span id="clear-history-text">مسح الكل</span>
+                    </button>
+                </div>
+                <div id="history-list" class="space-y-4"></div>
+                <div id="history-empty" class="text-center py-12">
+                    <p class="text-6xl mb-4">📜</p>
+                    <p class="text-gray-500 dark:text-gray-400 font-medium" id="no-history-text">لا يوجد سجل بحث</p>
+                </div>
+            </div>
+            
+            <!-- Stats Tab -->
+            <div id="content-stats" class="hidden space-y-6">
+                <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
+                    <h3 class="font-bold text-xl text-gray-900 dark:text-white mb-4" id="stats-title">إحصائيات الاستخدام</h3>
+                    <div class="grid grid-cols-2 gap-4 mb-6">
+                        <div class="bg-emerald-100 dark:bg-emerald-900/30 p-4 rounded-xl text-center">
+                            <p class="text-3xl font-black text-emerald-600 dark:text-emerald-400" id="stat-total">0</p>
+                            <p class="text-sm text-gray-600 dark:text-gray-400 font-medium" id="stat-total-label">إجمالي الفحوصات</p>
+                        </div>
+                        <div class="bg-blue-100 dark:bg-blue-900/30 p-4 rounded-xl text-center">
+                            <p class="text-3xl font-black text-blue-600 dark:text-blue-400" id="stat-favorites">0</p>
+                            <p class="text-sm text-gray-600 dark:text-gray-400 font-medium" id="stat-favorites-label">المفضلة</p>
+                        </div>
+                    </div>
+                    <canvas id="stats-chart" height="200"></canvas>
+                </div>
+                
+                <button id="export-data-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl font-bold transition">
+                    <span>📥</span> <span id="export-data-text">تصدير البيانات</span>
+                </button>
+            </div>
+            
+        </main>
+        
+    </div>
+    
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 p-4 overflow-y-auto">
+        <div class="max-w-md mx-auto my-8 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl animate-fade-in">
+            <div class="p-6 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                <h2 id="settings-title" class="text-2xl font-bold text-gray-900 dark:text-white">⚙️ الإعدادات</h2>
+                <button id="close-settings" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-2xl">✕</button>
+            </div>
+            <div class="p-6 space-y-6">
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2" id="lang-setting">اللغة</label>
+                    <select id="default-lang" class="w-full px-4 py-2 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl focus:border-emerald-500 outline-none">
+                        <option value="ar">العربية</option>
+                        <option value="en">English</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2" id="theme-setting">المظهر</label>
+                    <select id="default-theme" class="w-full px-4 py-2 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl focus:border-emerald-500 outline-none">
+                        <option value="light">فاتح</option>
+                        <option value="dark">داكن</option>
+                        <option value="auto">تلقائي</option>
+                    </select>
+                </div>
+                <button id="save-settings" class="w-full gradient-primary text-white py-3 rounded-xl font-bold hover:shadow-lg transition">
+                    <span id="save-settings-text">حفظ</span>
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Comparison Modal -->
+    <div id="comparison-modal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 p-4 overflow-y-auto">
+        <div class="max-w-4xl mx-auto my-8 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl animate-fade-in">
+            <div class="p-6 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                <h2 id="comparison-title" class="text-2xl font-bold text-gray-900 dark:text-white">⚖️ مقارنة المنتجات</h2>
+                <button id="close-comparison" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-2xl">✕</button>
+            </div>
+            <div id="comparison-content" class="p-6 grid md:grid-cols-2 gap-6"></div>
+        </div>
+    </div>
+    
+    <script>
+        // Suppress external script errors
+        window.addEventListener('error', function(e) {
+            if (e.filename && (e.filename.includes('chart.js') || e.filename.includes('tailwind'))) {
+                e.preventDefault();
+                return true;
+            }
+        });
+        
+        // App State
+        let currentLang = localStorage.getItem('lang') || 'ar';
+        let currentTheme = localStorage.getItem('theme') || 'light';
+        let currentTab = 'scan';
+        let comparisonMode = false;
+        let comparisonProducts = JSON.parse(localStorage.getItem('comparisonProducts') || '[]');
+        let favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+        let history = JSON.parse(localStorage.getItem('history') || '[]');
+        
+        // Demo Products Database
+        const demoProducts = {
+            '3017620422003': {
+                code: '3017620422003',
+                product_name: 'Nutella',
+                product_name_ar: 'نوتيلا',
+                brands: 'Ferrero',
+                nutriscore_grade: 'e',
+                nova_group: 4,
+                ecoscore_grade: 'c',
+                ingredients_text: 'Sugar, Palm Oil, Hazelnuts (13%), Skimmed Milk Powder (8.7%), Fat-Reduced Cocoa (7.4%), Emulsifier: Lecithins (Soya), Vanillin',
+                ingredients_text_ar: 'سكر، زيت النخيل، بندق (13%)، حليب مجفف منزوع الدسم (8.7%)، كاكاو قليل الدسم (7.4%)، مستحلب: ليسيثين (صويا)، فانيلين',
+                halal_status: 'halal'
+            },
+            '737628064502': {
+                code: '737628064502',
+                product_name: 'Coca-Cola',
+                product_name_ar: 'كوكاكولا',
+                brands: 'Coca-Cola',
+                nutriscore_grade: 'd',
+                nova_group: 4,
+                ecoscore_grade: 'b',
+                ingredients_text: 'Carbonated Water, Sugar, Colour (Caramel E150d), Phosphoric Acid, Natural Flavourings',
+                ingredients_text_ar: 'ماء غازي، سكر، ملون (كراميل E150d)، حمض الفوسفوريك، نكهات طبيعية',
+                halal_status: 'halal'
+            },
+            '5449000000996': {
+                code: '5449000000996',
+                product_name: 'Pepsi',
+                product_name_ar: 'بيبسي',
+                brands: 'PepsiCo',
+                nutriscore_grade: 'd',
+                nova_group: 4,
+                ecoscore_grade: 'b',
+                ingredients_text: 'Carbonated Water, Sugar, Colour (Caramel E150d), Acid (Phosphoric Acid), Flavourings',
+                ingredients_text_ar: 'ماء غازي، سكر، ملون (كراميل E150d)، حمض (حمض الفوسفوريك)، نكهات',
+                halal_status: 'halal'
+            }
+        };
+        
+        // Translations
+        const translations = {
+            ar: {
+                appTitle: 'فاحص الحلال Pro',
+                appSubtitle: 'تحقق من المنتجات الغذائية بسهولة',
+                tabScan: 'فحص',
+                tabFavorites: 'المفضلة',
+                tabHistory: 'السجل',
+                tabStats: 'إحصائيات',
+                scanText: 'امسح الباركود',
+                manualTitle: 'أو أدخل الباركود يدوياً',
+                checkBtn: 'فحص المنتج',
+                loadingText: 'جاري فحص المنتج...',
+                halal: 'حلال ✓',
+                haram: 'حرام ✗',
+                doubtful: 'مشكوك فيه ⚠',
+                addToFavorites: 'إضافة للمفضلة',
+                removeFromFavorites: 'إزالة من المفضلة',
+                addToCompare: 'إضافة للمقارنة',
+                compareNow: 'مقارنة الآن',
+                comparisonMode: 'وضع المقارنة نشط',
+                productsSelected: 'منتجات محددة',
+                noFavorites: 'لا توجد منتجات مفضلة بعد',
+                noHistory: 'لا يوجد سجل بحث',
+                historyTitle: 'سجل البحث',
+                clearHistory: 'مسح الكل',
+                statsTitle: 'إحصائيات الاستخدام',
+                statTotal: 'إجمالي الفحوصات',
+                statFavorites: 'المفضلة',
+                exportData: 'تصدير البيانات',
+                settingsTitle: '⚙️ الإعدادات',
+                langSetting: 'اللغة',
+                themeSetting: 'المظهر',
+                saveSettings: 'حفظ',
+                comparisonTitle: '⚖️ مقارنة المنتجات',
+                ingredientsTitle: 'المكونات',
+                nutriLabel: 'غذائي',
+                novaLabel: 'معالجة',
+                ecoLabel: 'بيئي'
+            },
+            en: {
+                appTitle: 'HalalCheck Pro',
+                appSubtitle: 'Verify food products easily',
+                tabScan: 'Scan',
+                tabFavorites: 'Favorites',
+                tabHistory: 'History',
+                tabStats: 'Statistics',
+                scanText: 'Scan Barcode',
+                manualTitle: 'Or enter barcode manually',
+                checkBtn: 'Check Product',
+                loadingText: 'Checking product...',
+                halal: 'Halal ✓',
+                haram: 'Haram ✗',
+                doubtful: 'Doubtful ⚠',
+                addToFavorites: 'Add to Favorites',
+                removeFromFavorites: 'Remove from Favorites',
+                addToCompare: 'Add to Compare',
+                compareNow: 'Compare Now',
+                comparisonMode: 'Comparison Mode Active',
+                productsSelected: 'products selected',
+                noFavorites: 'No favorite products yet',
+                noHistory: 'No search history',
+                historyTitle: 'Search History',
+                clearHistory: 'Clear All',
+                statsTitle: 'Usage Statistics',
+                statTotal: 'Total Scans',
+                statFavorites: 'Favorites',
+                exportData: 'Export Data',
+                settingsTitle: '⚙️ Settings',
+                langSetting: 'Language',
+                themeSetting: 'Theme',
+                saveSettings: 'Save',
+                comparisonTitle: '⚖️ Product Comparison',
+                ingredientsTitle: 'Ingredients',
+                nutriLabel: 'Nutri',
+                novaLabel: 'NOVA',
+                ecoLabel: 'Eco'
+            }
+        };
+        
+        // Initialize
+        applyTheme(currentTheme);
+        setLanguage(currentLang);
+        updateComparisonBanner();
+        renderTab(currentTab);
+        
+        // Scan button - show input
+        document.getElementById('scan-btn').addEventListener('click', () => {
+            document.getElementById('barcode-input').focus();
+            document.getElementById('barcode-input').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+        
+        // Theme
+        document.getElementById('theme-toggle').addEventListener('click', () => {
+            currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+            applyTheme(currentTheme);
+            localStorage.setItem('theme', currentTheme);
+        });
+        
+        function applyTheme(theme) {
+            if (theme === 'dark') {
+                document.documentElement.classList.add('dark');
+                document.getElementById('theme-icon').textContent = '☀️';
+            } else {
+                document.documentElement.classList.remove('dark');
+                document.getElementById('theme-icon').textContent = '🌙';
+            }
+        }
+        
+        // Language
+        document.getElementById('lang-toggle').addEventListener('click', () => {
+            currentLang = currentLang === 'ar' ? 'en' : 'ar';
+            setLanguage(currentLang);
+            localStorage.setItem('lang', currentLang);
+        });
+        
+        function setLanguage(lang) {
+            const t = translations[lang];
+            document.documentElement.lang = lang;
+            document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+            document.body.classList.toggle('en', lang === 'en');
+            
+            document.getElementById('app-title').textContent = t.appTitle;
+            document.getElementById('app-subtitle').textContent = t.appSubtitle;
+            document.getElementById('tab-scan-text').textContent = t.tabScan;
+            document.getElementById('tab-favorites-text').textContent = t.tabFavorites;
+            document.getElementById('tab-history-text').textContent = t.tabHistory;
+            document.getElementById('tab-stats-text').textContent = t.tabStats;
+            document.getElementById('scan-text').textContent = t.scanText;
+            document.getElementById('manual-title').textContent = t.manualTitle;
+            document.getElementById('check-btn-text').textContent = t.checkBtn;
+            document.getElementById('loading-text').textContent = t.loadingText;
+            document.getElementById('lang-toggle').textContent = lang === 'ar' ? 'EN' : 'AR';
+            
+            renderTab(currentTab);
+        }
+        
+        // Tabs
+        document.getElementById('tab-scan').addEventListener('click', () => switchTab('scan'));
+        document.getElementById('tab-favorites').addEventListener('click', () => switchTab('favorites'));
+        document.getElementById('tab-history').addEventListener('click', () => switchTab('history'));
+        document.getElementById('tab-stats').addEventListener('click', () => switchTab('stats'));
+        
+        function switchTab(tab) {
+            currentTab = tab;
+            ['scan', 'favorites', 'history', 'stats'].forEach(t => {
+                document.getElementById(`content-${t}`).classList.toggle('hidden', t !== tab);
+                const tabBtn = document.getElementById(`tab-${t}`);
+                if (t === tab) {
+                    tabBtn.className = 'flex-1 py-3 px-4 font-bold text-emerald-600 dark:text-emerald-400 border-b-2 border-emerald-600 dark:border-emerald-400 transition';
+                } else {
+                    tabBtn.className = 'flex-1 py-3 px-4 font-bold text-gray-500 dark:text-gray-400 transition hover:text-gray-700 dark:hover:text-gray-300';
+                }
+            });
+            renderTab(tab);
+        }
+        
+        function renderTab(tab) {
+            const t = translations[currentLang];
+            if (tab === 'favorites') {
+                renderFavorites();
+            } else if (tab === 'history') {
+                renderHistory();
+            } else if (tab === 'stats') {
+                renderStats();
+            }
+        }
+        
+        // Search Product
+        document.getElementById('check-btn').addEventListener('click', () => {
+            const barcode = document.getElementById('barcode-input').value.trim();
+            if (barcode) searchProduct(barcode);
+        });
+        
+        // Enter key support
+        document.getElementById('barcode-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const barcode = document.getElementById('barcode-input').value.trim();
+                if (barcode) searchProduct(barcode);
+            }
+        });
+        
+        async function searchProduct(barcode) {
+            showLoading();
+            setTimeout(() => {
+                const product = demoProducts[barcode];
+                if (product) {
+                    addToHistory(product);
+                    if (comparisonMode) {
+                        addToComparison(product);
+                    } else {
+                        displayResult(product);
+                    }
+                } else {
+                    alert(currentLang === 'ar' ? 'المنتج غير موجود' : 'Product not found');
+                    hideLoading();
+                }
+            }, 1000);
+        }
+        
+        function showLoading() {
+            document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('results').classList.add('hidden');
+        }
+        
+        function hideLoading() {
+            document.getElementById('loading').classList.add('hidden');
+        }
+        
+        function displayResult(product) {
+            hideLoading();
+            const t = translations[currentLang];
+            const isFavorite = favorites.some(f => f.code === product.code);
+            
+            // Get ingredients in current language
+            const ingredientsText = currentLang === 'ar' ? 
+                (product.ingredients_text_ar || product.ingredients_text) : 
+                product.ingredients_text;
+            
+            const html = `
+                <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 space-y-4">
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1">
+                            <h2 class="text-2xl font-black text-gray-900 dark:text-white mb-1">
+                                ${currentLang === 'ar' ? product.product_name_ar : product.product_name}
+                            </h2>
+                            <p class="text-gray-500 dark:text-gray-400 text-sm font-medium">${product.brands}</p>
+                        </div>
+                        <button onclick="toggleFavorite('${product.code}')" class="text-3xl">
+                            ${isFavorite ? '⭐' : '☆'}
+                        </button>
+                    </div>
+                    
+                    <div class="p-6 rounded-xl text-center bg-gradient-to-br from-emerald-100 to-green-100 dark:from-emerald-900/30 dark:to-green-900/30 border-2 border-emerald-500">
+                        <div class="text-5xl mb-2">✅</div>
+                        <div class="text-xl font-bold text-emerald-700 dark:text-emerald-300">${t.halal}</div>
+                    </div>
+                    
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="text-center">
+                            <div class="w-16 h-16 rounded-full bg-gradient-to-br from-red-400 to-red-600 text-white flex items-center justify-center text-2xl font-black mx-auto mb-2 shadow-lg">
+                                ${product.nutriscore_grade.toUpperCase()}
+                            </div>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">${t.nutriLabel}</p>
+                        </div>
+                        <div class="text-center">
+                            <div class="w-16 h-16 rounded-full bg-gradient-to-br from-orange-400 to-red-500 text-white flex items-center justify-center text-2xl font-black mx-auto mb-2 shadow-lg">
+                                ${product.nova_group}
+                            </div>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">${t.novaLabel}</p>
+                        </div>
+                        <div class="text-center">
+                            <div class="w-16 h-16 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 text-white flex items-center justify-center text-2xl font-black mx-auto mb-2 shadow-lg">
+                                ${product.ecoscore_grade.toUpperCase()}
+                            </div>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">${t.ecoLabel}</p>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h3 class="font-bold text-lg text-gray-900 dark:text-white mb-2">${t.ingredientsTitle}</h3>
+                        ${ingredientsText.split(/[,،]/).map(ing => `
+                            <div class="flex items-center gap-2 p-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg mb-2">
+                                <span>✓</span>
+                                <span class="text-sm text-gray-700 dark:text-gray-300">${ing.trim()}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                    
+                    <div class="flex gap-2">
+                        <button onclick="addToComparison(${JSON.stringify(product).replace(/"/g, '&quot;')})" 
+                                class="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-xl font-bold transition">
+                            ⚖️ ${t.addToCompare}
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('results').innerHTML = html;
+            document.getElementById('results').classList.remove('hidden');
+        }
+        
+        // Favorites
+        function toggleFavorite(code) {
+            const product = demoProducts[code];
+            const index = favorites.findIndex(f => f.code === code);
+            if (index > -1) {
+                favorites.splice(index, 1);
+            } else {
+                favorites.push(product);
+            }
+            localStorage.setItem('favorites', JSON.stringify(favorites));
+            if (currentTab === 'scan') {
+                searchProduct(code);
+            } else {
+                renderFavorites();
+            }
+        }
+        
+        function renderFavorites() {
+            const t = translations[currentLang];
+            const list = document.getElementById('favorites-list');
+            const empty = document.getElementById('favorites-empty');
+            
+            if (favorites.length === 0) {
+                list.innerHTML = '';
+                empty.classList.remove('hidden');
+                document.getElementById('no-favorites-text').textContent = t.noFavorites;
+            } else {
+                empty.classList.add('hidden');
+                list.innerHTML = favorites.map(p => `
+                    <div class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow">
+                        <div class="flex items-center justify-between">
+                            <div class="flex-1">
+                                <h3 class="font-bold text-gray-900 dark:text-white">${currentLang === 'ar' ? p.product_name_ar : p.product_name}</h3>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">${p.brands}</p>
+                            </div>
+                            <button onclick="toggleFavorite('${p.code}')" class="text-2xl">⭐</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+        
+        // History
+        function addToHistory(product) {
+            history = history.filter(h => h.code !== product.code);
+            history.unshift({...product, timestamp: Date.now()});
+            if (history.length > 50) history = history.slice(0, 50);
+            localStorage.setItem('history', JSON.stringify(history));
+        }
+        
+        function renderHistory() {
+            const t = translations[currentLang];
+            const list = document.getElementById('history-list');
+            const empty = document.getElementById('history-empty');
+            
+            document.getElementById('history-title').textContent = t.historyTitle;
+            document.getElementById('clear-history-text').textContent = t.clearHistory;
+            
+            if (history.length === 0) {
+                list.innerHTML = '';
+                empty.classList.remove('hidden');
+                document.getElementById('no-history-text').textContent = t.noHistory;
+            } else {
+                empty.classList.add('hidden');
+                list.innerHTML = history.map(p => `
+                    <div class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow cursor-pointer hover:shadow-lg transition"
+                         onclick="searchProduct('${p.code}'); switchTab('scan')">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="font-bold text-gray-900 dark:text-white">${currentLang === 'ar' ? p.product_name_ar : p.product_name}</h3>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">${new Date(p.timestamp).toLocaleDateString(currentLang)}</p>
+                            </div>
+                            <span class="text-2xl">${p.halal_status === 'halal' ? '✅' : '❌'}</span>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+        
+        document.getElementById('clear-history-btn').addEventListener('click', () => {
+            if (confirm(currentLang === 'ar' ? 'هل تريد مسح السجل؟' : 'Clear history?')) {
+                history = [];
+                localStorage.setItem('history', JSON.stringify(history));
+                renderHistory();
+            }
+        });
+        
+        // Statistics
+        function renderStats() {
+            const t = translations[currentLang];
+            document.getElementById('stat-total').textContent = history.length;
+            document.getElementById('stat-favorites').textContent = favorites.length;
+            document.getElementById('stat-total-label').textContent = t.statTotal;
+            document.getElementById('stat-favorites-label').textContent = t.statFavorites;
+            document.getElementById('stats-title').textContent = t.statsTitle;
+            document.getElementById('export-data-text').textContent = t.exportData;
+            
+            const halalCount = history.filter(p => p.halal_status === 'halal').length;
+            const haramCount = history.filter(p => p.halal_status === 'haram').length;
+            const doubtfulCount = history.length - halalCount - haramCount;
+            
+            try {
+                const ctx = document.getElementById('stats-chart');
+                if (!ctx) return;
+                
+                if (window.statsChart) {
+                    window.statsChart.destroy();
+                }
+                
+                if (typeof Chart !== 'undefined') {
+                    window.statsChart = new Chart(ctx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: [t.halal, t.haram, t.doubtful],
+                            datasets: [{
+                                data: [halalCount, haramCount, doubtfulCount],
+                                backgroundColor: ['#10b981', '#ef4444', '#f59e0b']
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: { position: 'bottom' }
+                            }
+                        }
+                    });
+                } else {
+                    // Fallback if Chart.js fails to load
+                    ctx.parentElement.innerHTML = '<div class="text-center text-gray-500 dark:text-gray-400 py-8">Chart not available</div>';
+                }
+            } catch (error) {
+                console.log('Chart rendering skipped');
+            }
+        }
+        
+        document.getElementById('export-data-btn').addEventListener('click', () => {
+            const data = { history, favorites, timestamp: Date.now() };
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `halal-check-data-${Date.now()}.json`;
+            a.click();
+        });
+        
+        // Comparison
+        function addToComparison(product) {
+            if (comparisonProducts.length >= 2) {
+                comparisonProducts = [product];
+            } else {
+                comparisonProducts.push(product);
+            }
+            localStorage.setItem('comparisonProducts', JSON.stringify(comparisonProducts));
+            comparisonMode = comparisonProducts.length > 0;
+            updateComparisonBanner();
+            
+            if (comparisonProducts.length === 2) {
+                showComparison();
+            }
+        }
+        
+        function updateComparisonBanner() {
+            const t = translations[currentLang];
+            const banner = document.getElementById('comparison-banner');
+            if (comparisonProducts.length > 0) {
+                banner.classList.remove('hidden');
+                document.getElementById('comparison-mode-text').textContent = t.comparisonMode;
+                document.getElementById('comparison-products-count').textContent = 
+                    `${comparisonProducts.length} ${t.productsSelected}`;
+                document.getElementById('compare-now-text').textContent = t.compareNow;
+            } else {
+                banner.classList.add('hidden');
+            }
+        }
+        
+        document.getElementById('compare-now-btn').addEventListener('click', showComparison);
+        
+        function showComparison() {
+            if (comparisonProducts.length < 2) {
+                alert(currentLang === 'ar' ? 'يرجى اختيار منتجين للمقارنة' : 'Please select 2 products');
+                return;
+            }
+            
+            const t = translations[currentLang];
+            document.getElementById('comparison-title').textContent = t.comparisonTitle;
+            
+            const content = document.getElementById('comparison-content');
+            content.innerHTML = comparisonProducts.map(p => `
+                <div class="bg-gray-50 dark:bg-gray-900 rounded-xl p-6">
+                    <h3 class="font-bold text-xl text-gray-900 dark:text-white mb-4">
+                        ${currentLang === 'ar' ? p.product_name_ar : p.product_name}
+                    </h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600 dark:text-gray-400">Nutriscore:</span>
+                            <span class="font-bold">${p.nutriscore_grade.toUpperCase()}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600 dark:text-gray-400">NOVA:</span>
+                            <span class="font-bold">${p.nova_group}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600 dark:text-gray-400">Ecoscore:</span>
+                            <span class="font-bold">${p.ecoscore_grade.toUpperCase()}</span>
+                        </div>
+                        <div class="pt-3 border-t border-gray-300 dark:border-gray-700">
+                            <div class="text-center p-3 rounded-lg ${p.halal_status === 'halal' ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'}">
+                                ${p.halal_status === 'halal' ? t.halal : t.haram}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            
+            document.getElementById('comparison-modal').classList.remove('hidden');
+        }
+        
+        document.getElementById('close-comparison').addEventListener('click', () => {
+            document.getElementById('comparison-modal').classList.add('hidden');
+            comparisonProducts = [];
+            localStorage.setItem('comparisonProducts', JSON.stringify(comparisonProducts));
+            comparisonMode = false;
+            updateComparisonBanner();
+        });
+        
+        // Settings
+        document.getElementById('settings-toggle').addEventListener('click', () => {
+            document.getElementById('settings-modal').classList.remove('hidden');
+        });
+        
+        document.getElementById('close-settings').addEventListener('click', () => {
+            document.getElementById('settings-modal').classList.add('hidden');
+        });
+        
+        document.getElementById('save-settings').addEventListener('click', () => {
+            const lang = document.getElementById('default-lang').value;
+            const theme = document.getElementById('default-theme').value;
+            localStorage.setItem('lang', lang);
+            localStorage.setItem('theme', theme);
+            currentLang = lang;
+            currentTheme = theme;
+            setLanguage(lang);
+            applyTheme(theme);
+            document.getElementById('settings-modal').classList.add('hidden');
+        });
+    </script>
+</body>
+</html>
