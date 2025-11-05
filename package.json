@@ -4,7 +4,7 @@
   "description": "Professional Halal Product Scanner",
   "private": false,
   "type": "module",
-  "homepage": "https://faycel2015.github.io/halal-check-pro/halal-scanner-final.html",
+  "homepage": "https://faycel2015.github.io/halal-check-pro/",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
